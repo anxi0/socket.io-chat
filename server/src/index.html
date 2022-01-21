@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat out</title>
+  </head>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+      list-style: none;
+      text-align: center;
+      transition: 0.2s;
+    }
+    body {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+    section {
+      margin: auto;
+      max-width: 1000px;
+      min-width: 500px;
+      width: 50vw;
+      padding: 20px;
+    }
+    ul {
+      padding: 20px 10px;
+      margin: 20px auto;
+      min-height: 50vh;
+      height: 500px;
+      max-height: 80vh;
+      overflow-y: overlay;
+      box-shadow: 0 0 5px #00000066;
+    }
+    li {
+      display: flex;
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+      justify-content: space-between;
+      overflow: hidden;
+      animation: height2 0.5s forwards;
+      transform-origin: top;
+    }
+    li:last-of-type {
+      border-bottom: none;
+    }
+    li:hover {
+      background: #eee;
+    }
+    li > div.leftBox {
+      display: flex;
+    }
+    li > div.leftBox > p.id {
+      color: #333;
+      font-weight: bold;
+      width: 100px;
+      text-align: left;
+      border-right: 1px solid #ccc;
+      margin-right: 10px;
+    }
+    li > div.leftBox > p.chatVal {
+      font-size: 0.9em;
+      align-self: center;
+    }
+
+    li > div.rightBox > p.time {
+      color: #ccc;
+    }
+    input {
+      text-align: left;
+      width: 100%;
+      padding: 5px;
+    }
+    div.inputBox {
+      display: flex;
+      flex-direction: row;
+    }
+    button {
+      min-width: 90px;
+    }
+    /* @keyframes height {
+      0% {
+        opacity: 0;
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+      1% {
+        opacity: 0;
+        max-height: 0px;
+        padding-top: 0px;
+        padding-bottom: 0px;
+      }
+      2% {
+        opacity: 1;
+      }
+
+      100% {
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+    } */
+    @keyframes height2 {
+      0% {
+        transform: scaleY(0);
+      }
+      100% {
+        transform: scaleY(1);
+      }
+    }
+  </style>
+
+  <body>
+    <section>
+      <h1>Sangsoo chat</h1>
+      <ul>
+        <!-- <li>
+          <div class="leftBox">
+            <p class="id">아이디</p>
+            <p class="chatVal">채팅 내용</p>
+          </div>
+          <div class="rightBox">
+            <p class="time">00:00:00</p>
+          </div>
+        </li> -->
+      </ul>
+      <div class="inputBox"><input type="text" /><button>전송</button></div>
+    </section>
+
+    <script
+      src="https://cdn.socket.io/4.4.1/socket.io.min.js"
+      integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      const insertChat = (data) => {
+        let li = document.createElement("li");
+        let leftBox = document.createElement("div");
+        leftBox.className = "leftBox";
+        let idP = document.createElement("p");
+        idP.className = "id";
+        idP.innerHTML = data.user;
+        let chatP = document.createElement("p");
+        chatP.className = "chatVal";
+        chatP.innerHTML = data.chat;
+        leftBox.appendChild(idP);
+        leftBox.appendChild(chatP);
+        let rightBox = document.createElement("div");
+        rightBox.className = "rightBox";
+        let timestampP = document.createElement("p");
+        timestampP.className = "time";
+        timestampP.innerHTML = data.timestamp;
+        rightBox.appendChild(timestampP);
+        li.appendChild(leftBox);
+        li.appendChild(rightBox);
+
+        document.querySelector("ul").appendChild(li);
+        scrollDown();
+      };
+
+      const scrollDown = () => {
+        let ul = document.querySelector("ul");
+        ul.scrollTop = ul.scrollHeight;
+      };
+      const nickname = prompt("What's yo name");
+      const socket = io("/");
+
+      socket.emit("join", {
+        room: "default",
+        user: nickname,
+      });
+      socket.on("synchronize", (chats) => {
+        console.log(chats);
+        for (let i of chats) {
+          insertChat(i);
+        }
+        scrollDown();
+      });
+
+      socket.on("getChat", insertChat);
+    </script>
+    <script>
+      const chatInsert = document.querySelector("input");
+      chatInsert.onkeypress = (e) => {
+        if (e.code === "Enter") {
+          if (e.target.value.length !== 0) {
+            // console.log(e.target.value);
+            socket.emit("chat", {
+              user: nickname,
+              chat: e.target.value,
+              timestamp: new Date().toLocaleString(),
+            });
+            e.target.value = "";
+          }
+        }
+      };
+    </script>
+  </body>
+</html>
